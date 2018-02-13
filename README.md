@@ -1,55 +1,70 @@
 
-### How to run the W-tagging scalefactor code ###
+### W-tagging scalefactor producer ###
 #########################################
 
+Repository for fitting W-tagging scalefactors in a semi-leptonic ttbar enriched region. Contains code to skim nanoAOD samples using a semi-leptonic ttbar selection (WTopScalefactorProducer/Skimmer). This output is then used to fit data and MC and extract W-tagging scalefactors (WTopScalefactorProducer/Fitter) both from fitting the AK8 W-jet mass at low-pT (around 200 GeV) and fitting the top AK8 W-subjet mass (around 400 GeV). The calculated scalefactors are then statistically combined and fitted, yielding a parametrisation for the W-tagging pT-dependence.
+
+WTopScalefactorProducer/Skimmer : Start here. Produce samples.
+WTopScalefactorProducer/Fitter  : Based on output from above, run script mainBLABLA.sh to compute fully- and partially-merged W-tagging scalfactors as well as statistically combining the two
+
 ## installation instructions
-Source ROOT version 5.34/36 independently (currently no CMSSW version with ROOT 5.34.X with X>18 available), e.g at PSI:
+Setup CMSSW and get nanoAOD packages
 ```
-source /swshare/ROOT/root_v5.34.32_precompiled/root/bin/thisroot/.sh
-```
-### getting the code
+cmsrel CMSSW_9_4_2
+cd CMSSW_9_4_2/src
+cmsenv
+
+git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
+
+scram build
+
+cd PhysicsTools/NanoAODTools/
+
+git remote add sal https://github.com/rappoccio/nanoAOD-tools.git
+git fetch sal
+git checkout -b TTbarResHad remotes/sal/TTbarResHad
+
 
 ```
-export GITUSER=`git config user.github`
-echo "Your github username has been set to \"$GITUSER\""
-git clone git@github.com:${GITUSER}/WTopScalefactorProducer.git
+
+## getting the code
+
+```
+cd $CMSSW_base/src
+git clone -b nanoAOD git@github.com:BoostedScalefactors/WTopScalefactorProducer.git
 cd WTopScalefactorProducer
-git remote add originalRemote git@github.com:thaarres/WTopScalefactorProducer.git
+
+
+For public version:
+git clone https://github.com/${GITUSER}/WTopScalefactorProducer 
+cd WTopScalefactorProducer
+git remote add originalRemote https://github.com/BoostedScalefactors/WTopScalefactorProducer.git
 git fetch originalRemote
-git checkout -b DevelopmentBranch originalRemote/master
-git submodule init
-git submodule update
-```
-
-### running scalefactor code
-
-```
-cd boostedWScalefactorProducer
-export ROOFITSYS=$ROOTSYS
-python Automatic_Setup.py --vclean 1
-python Automatic_Setup.py #To compile
-python wtagSFfits.py -b   #To run
-```
-
-The basic script to be run is 
+git checkout -b nanoOAD originalRemote/nanoAOD
+git fetch originalRemote
+cd Skimmer/
+ln -s $CMSSW_BASE/src/PhysicsTools/NanoAODTools/scripts/haddnano.py .
+cd ..
+scram b -j18
 
 ```
-python wtagSFfits.py
-```
-It takes as input .root files containing a TTree with a branch for the mass distribution you want to calculate a scalefactor for. This branch can contain events after full selection is applied, or new selections can be implemented on the fly in wtagSFfits.py. In addition to a data and the separate background MC files, you need one file called "*pseudodata* wchich contains all MC added together (with their appropriate weights, using ROOT hadd).
 
-   
-   General Options:
+## Working locally (without CMSSW, just python2.7 and ROOT)
 ```
-    -b : To run without X11 windows
-    -c : channel you are using(electron,muon or electron+muon added together)
-    --HP : HP working point
-    --LP : LP working point
-    --fitTT : Only do fits to truth matched tt MC
-    --fitMC : Only do fits to MC (test fit functions)
-    --sample : name of TT MC eg --sample "herwig"
-    --doBinned : to do binned simultaneous fit (default is unbinned)
-    --76X : Use files with postfix "_76X" (change to postfix of your choice if running on several different samples)
-    --useDDT : Uses DDT tagger instead of pruning+softdrop (ops! Requires softdrop variables)
-    --usePuppiSD : Uses PUPPI + softdrop and PUPPI n-subjettiness
+cd PhysicsTools/NanoAODTools/
+(JUST ONCE:)
+bash standalone/env_standalone.sh build
+(EVERY TIME:)
+source standalone/env_standalone.sh
 ```
+
+
+## Step 1: Producing samples
+
+First you need to produce your input files by skimming nanoAOD samples. For this, see README in subdirectory Skimmer/.
+
+
+## Step 2: Running scalefactor code
+
+When you have skimmed your samples you can move to fitting the W-tagging scalefactor. The fitting code is located in Fitter/, see README in that directory. For scalefactors from merged W AK8 jet, use Fitter/partiallyMerged. For scalefactors from merged top AK8 jet, use Fitter/fullyMerged
+
